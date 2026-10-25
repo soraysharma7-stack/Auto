@@ -42,17 +42,28 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Install companion dependencies
         run: npm ci --prefix desktop-agent
-      - name: Compile the native Windows companion without packaging
+      - name: Build frontend and compile the native Windows companion
         shell: bash
         run: |
           set +e
-          log="/tmp/auto-tauri-build.log"
-          NO_COLOR=1 npm run tauri:build --prefix desktop-agent -- --debug --no-bundle --ci -v > "$log" 2>&1
-          build_exit=$?
-          cat "$log"
-          if [ "$build_exit" -ne 0 ]; then
+          report_failure() {
+            local status="$1"
+            local log="$2"
             tail -n 100 "$log" | while IFS= read -r line; do
               printf '::error::%s\n' "$line"
             done
-            exit "$build_exit"
+            exit "$status"
+          }
+          NO_COLOR=1 npm run build --prefix desktop-agent > /tmp/auto-frontend-build.log 2>&1
+          frontend_exit=$?
+          if [ "$frontend_exit" -ne 0 ]; then
+            report_failure "$frontend_exit" /tmp/auto-frontend-build.log
           fi
+          echo "Companion frontend built; starting Cargo"
+          cd desktop-agent/src-tauri
+          CARGO_TERM_COLOR=never cargo build --verbose > /tmp/auto-cargo-build.log 2>&1
+          cargo_exit=$?
+          if [ "$cargo_exit" -ne 0 ]; then
+            report_failure "$cargo_exit" /tmp/auto-cargo-build.log
+          fi
+          echo "Native Cargo build completed"
