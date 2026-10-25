@@ -43,15 +43,15 @@ jobs:
       - name: Install companion dependencies
         run: npm ci --prefix desktop-agent
       - name: Compile the native Windows companion without packaging
-        shell: pwsh
+        shell: bash
         run: |
-          $log = Join-Path $env:RUNNER_TEMP "auto-tauri-build.log"
-          & npm run tauri:build --prefix desktop-agent -- --debug --no-bundle *>&1 | Tee-Object -FilePath $log
-          $buildExit = $LASTEXITCODE
-          if ($buildExit -ne 0) {
-            Get-Content $log -Tail 100 | ForEach-Object {
-              $line = $_.ToString().Replace("%", "%25").Replace("`r", "%0D").Replace("`n", "%0A")
-              Write-Output "::error::$line"
-            }
-            exit $buildExit
-          }
+          set -o pipefail
+          log="/tmp/auto-tauri-build.log"
+          npm run tauri:build --prefix desktop-agent -- --debug --no-bundle 2>&1 | tee "$log"
+          build_exit=${PIPESTATUS[0]}
+          if [ "$build_exit" -ne 0 ]; then
+            tail -n 100 "$log" | while IFS= read -r line; do
+              printf '::error::%s\n' "$line"
+            done
+            exit "$build_exit"
+          fi

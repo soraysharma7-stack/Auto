@@ -54,13 +54,26 @@ export class CodingSandbox {
   }
 
   private async safeTarget(requested: string): Promise<string> {
-    const target = resolveSandboxPath(this.root, requested);
+    const lexicalTarget = resolveSandboxPath(this.root, requested);
+    const relative = path.relative(this.root, lexicalTarget);
     const rootReal = await realpath(this.root);
-    await mkdir(path.dirname(target), { recursive: true, mode: 0o700 });
-    const parentReal = await realpath(path.dirname(target));
-    if (parentReal !== rootReal && !parentReal.startsWith(`${rootReal}${path.sep}`)) {
-      throw new AppError("A workspace symlink points outside the sandbox", 403, "PATH_OUTSIDE_SANDBOX");
+    let current = rootReal;
+    const parent = path.dirname(relative);
+    if (parent !== ".") {
+      for (const segment of parent.split(path.sep)) {
+        current = path.join(current, segment);
+        try {
+          const stat = await lstat(current);
+          if (stat.isSymbolicLink() || !stat.isDirectory()) {
+            throw new AppError("Workspace directory symlinks are not allowed", 403, "SYMLINK_REJECTED");
+          }
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+          await mkdir(current, { mode: 0o700 });
+        }
+      }
     }
+    const target = path.join(rootReal, relative);
     try {
       if ((await lstat(target)).isSymbolicLink()) {
         throw new AppError("Symbolic-link targets are not allowed", 403, "SYMLINK_REJECTED");
