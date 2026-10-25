@@ -23,7 +23,17 @@ fn validate_file_path(raw: &str, permissions: &[Permission], write: bool) -> Res
     let normalized = if write {
         let parent = candidate.parent().ok_or_else(|| "Invalid file path".to_string())?;
         let parent = fs::canonicalize(parent).map_err(|_| "The target folder does not exist".to_string())?;
-        parent.join(candidate.file_name().ok_or_else(|| "Invalid file name".to_string())?)
+        let target = parent.join(candidate.file_name().ok_or_else(|| "Invalid file name".to_string())?);
+        match fs::symlink_metadata(&target) {
+            Ok(metadata) => {
+                if metadata.file_type().is_symlink() {
+                    return Err("Symbolic-link file targets are not allowed".to_string());
+                }
+                fs::canonicalize(&target).map_err(|error| error.to_string())?
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => target,
+            Err(error) => return Err(error.to_string()),
+        }
     } else {
         fs::canonicalize(&candidate).map_err(|_| "The target file does not exist".to_string())?
     };

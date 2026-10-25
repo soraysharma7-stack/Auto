@@ -1,3 +1,5 @@
+use std::{fs, path::PathBuf};
+
 use reqwest::Method;
 use serde_json::Value;
 use tauri::State;
@@ -80,6 +82,20 @@ pub async fn set_permission(
 ) -> Result<PublicState, String> {
     if !["screen", "input", "files"].contains(&capability.as_str()) {
         return Err("Unknown permission".to_string());
+    }
+    if capability == "files" && enabled {
+        if paths.is_empty() || paths.len() > 20 {
+            return Err("Choose between 1 and 20 allowed folders".to_string());
+        }
+        for raw in &paths {
+            if raw.len() > 300 || !PathBuf::from(raw).is_absolute() {
+                return Err("Allowed folders must be absolute paths of at most 300 characters".to_string());
+            }
+            let canonical = fs::canonicalize(raw).map_err(|_| format!("Folder does not exist: {raw}"))?;
+            if !canonical.is_dir() {
+                return Err(format!("Allowed path is not a folder: {raw}"));
+            }
+        }
     }
     let mut config = state.config()?;
     for permission in &mut config.permissions {

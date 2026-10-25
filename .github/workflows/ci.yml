@@ -45,11 +45,11 @@ jobs:
       - name: Compile the native Windows companion without packaging
         shell: bash
         run: |
-          set -o pipefail
           set +e
           log="/tmp/auto-tauri-build.log"
-          npm run tauri:build --prefix desktop-agent -- --debug --no-bundle 2>&1 | tee "$log"
-          build_exit=${PIPESTATUS[0]}
+          NO_COLOR=1 npm run tauri:build --prefix desktop-agent -- --debug --no-bundle --ci -v > "$log" 2>&1
+          build_exit=$?
+          cat "$log"
           if [ "$build_exit" -ne 0 ]; then
             tail -n 100 "$log" | while IFS= read -r line; do
               printf '::error::%s\n' "$line"
