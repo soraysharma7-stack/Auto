@@ -232,6 +232,53 @@ grant execute on function public.complete_task(uuid, uuid, text) to service_role
 grant execute on function public.fail_task(uuid, uuid, text) to service_role;
 grant execute on function public.decide_tool_approval(uuid, uuid, text) to service_role;
 
+create or replace function public.claim_device_action(
+  p_action_id uuid,
+  p_device_id uuid,
+  p_user_id uuid
+)
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_action public.device_actions%rowtype;
+  v_capability text;
+  v_permission_enabled boolean;
+begin
+  select a.* into v_action
+  from public.device_actions a
+  join public.device_sessions s on s.id = a.session_id and s.status = 'active'
+  join public.devices d on d.id = a.device_id and d.status = 'active'
+  where a.id = p_action_id and a.device_id = p_device_id and a.user_id = p_user_id
+    and a.status = 'pending' and a.expires_at > now()
+  for update of a, s, d;
+  if v_action.id is null then return null; end if;
+
+  v_capability := case
+    when v_action.type = 'screen_snapshot' then 'screen'
+    when v_action.type in ('read_file', 'write_file') then 'files'
+    else 'input'
+  end;
+  select p.enabled into v_permission_enabled
+  from public.device_permissions p
+  where p.device_id = p_device_id and p.user_id = p_user_id and p.capability = v_capability
+  for update;
+  if v_permission_enabled is not true then return null; end if;
+
+  update public.device_actions set status = 'running', updated_at = now() where id = v_action.id;
+  return jsonb_build_object(
+    'id', v_action.id,
+    'session_id', v_action.session_id,
+    'type', v_action.type,
+    'payload', v_action.payload,
+    'status', 'running',
+    'expires_at', v_action.expires_at
+  );
+end;
+$$;
+
+revoke all on function public.claim_device_action(uuid, uuid, uuid) from public, anon, authenticated;
+grant execute on function public.claim_device_action(uuid, uuid, uuid) to service_role;
+
 create or replace function public.expire_stale_work()
 returns integer
 language plpgsql security definer set search_path = public as $$

@@ -56,7 +56,7 @@ but still add explicit owner predicates; RLS protects direct browser/anon access
 Every user-owned table has an owner and RLS. Browser roles can manage only configuration/data
 that is safe to mutate directly; execution, secrets, usage and audit internals are service-only.
 The pgTAP suite uses two auth identities for a full Supabase stack. A separate portable
-PostgreSQL 18 harness applies the real migrations and runs 33 RLS/grant/rate-limit/queue assertions
+PostgreSQL 18 harness applies the real migrations and runs 38 RLS/grant/rate-limit/queue assertions
 in local checks and CI.
 
 Conversation memory is the recent non-failed message context deliberately sent with a request.

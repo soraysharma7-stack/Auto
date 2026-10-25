@@ -71,10 +71,10 @@ pub fn load_initial_state() -> AppState {
 
 pub fn save_config(config: &Config) -> Result<(), String> {
     let path = config_path()?;
-    let temporary = path.with_extension("tmp");
     let content = serde_json::to_string_pretty(config).map_err(|error| error.to_string())?;
-    fs::write(&temporary, content).map_err(|error| error.to_string())?;
-    fs::rename(temporary, path).map_err(|error| error.to_string())?;
+    // Windows rename does not replace an existing destination. This file contains no token;
+    // the credential remains in the OS store, so a direct bounded config write is sufficient.
+    fs::write(path, content).map_err(|error| error.to_string())?;
     Ok(())
 }
 

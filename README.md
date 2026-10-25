@@ -5,7 +5,7 @@ programs**: Auto Web (Next.js) and Auto Agent PC (Tauri + Rust). Browser access 
 controls a computer.
 
 > **Source status:** the integrated application, migrations, worker, tools and companion source
-> are present. Web static checks, unit tests, 33 PostgreSQL integration assertions, production build and
+> are present. Web static checks, unit tests, 38 PostgreSQL integration assertions, production build and
 > unconfigured-browser tests pass locally. Accounts, providers, tasks and devices require your own configured services. Live
 > Supabase/RLS, Docker sandbox and native Windows verification are still required before release;
 > see [docs/testing.md](docs/testing.md).

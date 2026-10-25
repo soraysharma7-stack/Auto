@@ -16,7 +16,7 @@ the authenticated owner because the service-role key bypasses RLS.
 ## Verification
 
 ```bash
-npm run test:database  # Real temporary PostgreSQL 18 migrations + 33 security/queue assertions
+npm run test:database  # Real temporary PostgreSQL 18 migrations + 38 security/queue assertions
 npm run db:start       # Full local Supabase stack; requires Docker
 npm run db:reset
 npm run db:test        # pgTAP suite; requires the full local stack

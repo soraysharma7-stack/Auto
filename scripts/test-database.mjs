@@ -147,6 +147,31 @@ async function authenticate(client, userId) {
     check(reclaimed.run_id !== claim.run_id, 'Recovery: requeue creates a new run attempt');
     check((await scalar(client, 'select attempt from public.agent_runs where id = $1', [reclaimed.run_id])).attempt === 2, 'Recovery: attempt history is retained');
 
+    const device = '70000000-0000-4000-8000-000000000001';
+    const session = '70000000-0000-4000-8000-000000000002';
+    const action = '70000000-0000-4000-8000-000000000003';
+    await client.query(`insert into public.devices (id, user_id, name, app_version) values ($1, $2, 'Test PC', '0.1.0')`, [device, A]);
+    await client.query(`insert into public.device_sessions (id, device_id, user_id) values ($1, $2, $3)`, [session, device, A]);
+    await client.query(`insert into public.device_permissions (device_id, user_id, capability, enabled) values ($1, $2, 'input', true)`, [device, A]);
+    await client.query(`insert into public.device_actions (id, session_id, device_id, user_id, type, payload)
+      values ($1, $2, $3, $4, 'mouse_click', '{"button":"left"}')`, [action, session, device, A]);
+    let claimedAction = (await scalar(client, 'select public.claim_device_action($1, $2, $3) as action', [action, device, A])).action;
+    check(claimedAction?.status === 'running', 'Device: active session and permission allow one atomic claim');
+    claimedAction = (await scalar(client, 'select public.claim_device_action($1, $2, $3) as action', [action, device, A])).action;
+    check(claimedAction === null, 'Device: duplicate action claim is rejected');
+    await client.query(`update public.device_actions set status = 'pending' where id = $1`, [action]);
+    await client.query(`update public.device_sessions set status = 'stopped' where id = $1`, [session]);
+    claimedAction = (await scalar(client, 'select public.claim_device_action($1, $2, $3) as action', [action, device, A])).action;
+    check(claimedAction === null, 'Device: stopped session blocks execution');
+    await client.query(`update public.device_sessions set status = 'active', ended_at = null where id = $1`, [session]);
+    await client.query(`update public.device_permissions set enabled = false where device_id = $1 and capability = 'input'`, [device]);
+    claimedAction = (await scalar(client, 'select public.claim_device_action($1, $2, $3) as action', [action, device, A])).action;
+    check(claimedAction === null, 'Device: revoked permission blocks execution');
+    await client.query(`update public.device_permissions set enabled = true where device_id = $1 and capability = 'input'`, [device]);
+    await client.query(`update public.device_actions set expires_at = now() - interval '1 second' where id = $1`, [action]);
+    claimedAction = (await scalar(client, 'select public.claim_device_action($1, $2, $3) as action', [action, device, A])).action;
+    check(claimedAction === null, 'Device: expired action cannot execute');
+
     console.log(`\n${assertions} PostgreSQL integration assertions passed.`);
   } finally {
     if (client) await client.end();

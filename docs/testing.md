@@ -11,7 +11,7 @@ security boundaries need their own checks.
 | Type safety | `npm run typecheck` | Strict web/server/tests TypeScript |
 | Unit contracts | `npm test` | 29 tests across navigation, provider adapters, routing/context, encryption, validation, ownership, transitions, sandbox/device paths and API boundaries |
 | Web production build | `npm run build` | Next.js compilation, type validation and route generation |
-| PostgreSQL integration | `npm run test:database` | 33 assertions against temporary PostgreSQL 18: migrations, RLS, grants, rate limits, queue transitions, approvals and lease recovery |
+| PostgreSQL integration | `npm run test:database` | 38 assertions against temporary PostgreSQL 18: migrations, RLS, grants, rate limits, queue transitions, approvals and lease recovery |
 | Browser behavior | `npm run test:e2e` | 16 Chromium tests: all routes, setup honesty, no fake composer, API setup error, mobile navigation and themes |
 | Companion UI build | `npm run build --prefix desktop-agent` | React TypeScript and Vite production compilation |
 | Database security | `npm run db:test` | pgTAP source for two-user RLS, execution-write denial and secret/rate-limit grant denial |
@@ -64,7 +64,7 @@ Local static/browser evidence:
 - [x] All workspace routes render honestly without credentials.
 - [x] Browser navigation and theme persistence pass without inspected console errors.
 - [x] Provider keys are excluded from the explicit account-export query and client contracts.
-- [x] Actual migrations, cross-user RLS/grants and 33 queue/security assertions pass on PostgreSQL 18.
+- [x] Actual migrations, cross-user RLS/grants and 38 queue/security assertions pass on PostgreSQL 18.
 
 Still required with real infrastructure:
 
