@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Next.js output
+.next/
+out/
+
+# Production and test output
+build/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# Local configuration and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Future Rust / Tauri companion
+desktop-agent/target/
+desktop-agent/src-tauri/target/
+desktop-agent/gen/
