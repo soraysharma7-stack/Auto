@@ -10,6 +10,7 @@ export type AIRequest = {
   model: string;
   mode: AIMode;
   maxOutputTokens: number;
+  jsonResponse?: boolean;
   signal?: AbortSignal;
 };
 

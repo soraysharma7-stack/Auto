@@ -27,6 +27,7 @@ export const openAIProvider: AIProviderAdapter = {
         model: request.model,
         messages: request.messages,
         max_completion_tokens: request.maxOutputTokens,
+        ...(request.jsonResponse ? { response_format: { type: "json_object" } } : {}),
       }),
     }, request.signal);
     await assertProviderResponse(response);

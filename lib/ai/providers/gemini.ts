@@ -39,7 +39,10 @@ export const geminiProvider: AIProviderAdapter = {
             role: message.role === "assistant" ? "model" : "user",
             parts: [{ text: message.content }],
           })),
-          generationConfig: { maxOutputTokens: request.maxOutputTokens },
+          generationConfig: {
+            maxOutputTokens: request.maxOutputTokens,
+            ...(request.jsonResponse ? { responseMimeType: "application/json" } : {}),
+          },
         }),
       },
       request.signal,

@@ -113,6 +113,7 @@ export async function generateWithRouter(input: {
         model: connection.model,
         mode: input.mode,
         maxOutputTokens,
+        jsonResponse: input.kind === "task",
         signal: input.signal,
       });
       const latency = Date.now() - startedAt;

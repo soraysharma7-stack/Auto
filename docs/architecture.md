@@ -67,7 +67,8 @@ truncated.
 ## 4. Provider routing
 
 Official adapters normalize Gemini, OpenAI and Anthropic text responses, token usage, timeouts,
-HTTP failures and malformed responses. Only verified AI connections are eligible. Routing uses:
+HTTP failures and malformed responses. Task calls use official JSON/structured-response modes;
+chat remains ordinary text. Only verified AI connections are eligible. Routing uses:
 
 - mode eligibility configured on the connection;
 - preferred provider/model and user priority;

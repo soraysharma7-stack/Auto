@@ -46,6 +46,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          set +e
           log="/tmp/auto-tauri-build.log"
           npm run tauri:build --prefix desktop-agent -- --debug --no-bundle 2>&1 | tee "$log"
           build_exit=${PIPESTATUS[0]}

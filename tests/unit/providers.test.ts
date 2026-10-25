@@ -35,6 +35,28 @@ describe("official provider adapters", () => {
     expect(response).toMatchObject({ text: "A clear answer", provider: "anthropic", inputTokens: 4, outputTokens: 3 });
   });
 
+  it("uses OpenAI JSON mode for structured task envelopes", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      choices: [{ message: { content: '{"type":"final","content":"Done"}' } }],
+    }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await openAIProvider.generate("secret", { ...request, jsonResponse: true });
+    expect(JSON.parse(response.text)).toEqual({ type: "final", content: "Done" });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.response_format).toEqual({ type: "json_object" });
+  });
+
+  it("uses a forced Anthropic response tool for structured task envelopes", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      content: [{ type: "tool_use", name: "auto_agent_response", input: { type: "final", content: "Done" } }],
+    }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await anthropicProvider.generate("secret", { ...request, jsonResponse: true });
+    expect(JSON.parse(response.text)).toEqual({ type: "final", content: "Done" });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.tool_choice).toEqual({ type: "tool", name: "auto_agent_response" });
+  });
+
   it("marks OpenAI authentication failures as non-retryable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: { message: "Invalid key" } }), { status: 401 })));
     await expect(openAIProvider.generate("bad", request)).rejects.toMatchObject({ code: "authentication", retryable: false });
